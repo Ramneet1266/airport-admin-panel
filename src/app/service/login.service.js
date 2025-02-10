@@ -1,12 +1,5 @@
 import { toast } from "react-toastify"
-import {
-	getAuth,
-	signInWithEmailAndPassword,
-	updateEmail,
-	updatePassword,
-	updateProfile,
-	sendEmailVerification,
-} from "firebase/auth"
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth"
 import { app } from "../lib/firebase"
 
 const auth = getAuth(app)
@@ -20,6 +13,15 @@ export const loginService = async (email, password) => {
 			password
 		)
 		if (userCredential) {
+			const user = userCredential.user
+			localStorage.setItem(
+				"user",
+				JSON.stringify({
+					uid: user.uid,
+					email: user.email,
+					token: await user.getIdToken(),
+				})
+			)
 			return userCredential
 		}
 	} catch (error) {

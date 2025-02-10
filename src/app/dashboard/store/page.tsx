@@ -2,7 +2,11 @@
 import React, { useEffect, useState } from "react"
 import { X } from "lucide-react"
 import { toast } from "react-toastify"
-import { addStore, getStores } from "../../service/store.service" // Adjust as per the correct path
+import {
+	addStore,
+	getStores,
+	importUsersFromFirestore,
+} from "../../service/store.service" // Adjust as per the correct path
 
 export default function Page() {
 	interface Store {
@@ -11,13 +15,17 @@ export default function Page() {
 		storeId: string
 		category: string
 		storeNumber: string
+		email: string
+		password: string
+		status: string
 	}
 	const [addressOne, setAddressOne] = useState("")
 	const [addressTwo, setAddressTwo] = useState("")
-	const [category, setCategory] = useState("Clothing")
-	const [storeNumber, setStoreNumber] = useState("101")
+	const [category, setCategory] = useState("")
+	const [storeNumber, setStoreNumber] = useState("")
 	const [loading, setLoading] = useState(false)
 	const [isOpen, setIsOpen] = useState(false)
+	const [status, setStatus] = useState("Active")
 
 	//Fetch data
 	const [stores, setStores] = useState<Store[]>([])
@@ -38,6 +46,7 @@ export default function Page() {
 
 	useEffect(() => {
 		fetchAgents()
+		importUsersFromFirestore()
 	}, [])
 
 	const generateValues = () => {
@@ -45,12 +54,20 @@ export default function Page() {
 		const storeId = `${category
 			.substring(0, 3)
 			.toUpperCase()}-${storeNumber}-${timeStamp}`
-		return { storeId }
+		const email = `${category
+			.substring(0, 3)
+			.toLowerCase()
+			.replace(
+				/\s+/g,
+				""
+			)}-${storeNumber}@${category.toLowerCase()}.com`
+		const password = Math.random().toString(36).slice(-10)
+		return { storeId, email, password }
 	}
 	const handleSubmit = async (e: any) => {
 		e.preventDefault()
 		setLoading(true)
-		const { storeId } = generateValues()
+		const { storeId, email, password } = generateValues()
 
 		// Add agent data and handle response
 		try {
@@ -60,6 +77,9 @@ export default function Page() {
 				addressTwo,
 				category,
 				storeNumber,
+				email,
+				password,
+				status,
 			})
 			if (res) {
 				toast.success("Store added Successfully")
@@ -110,7 +130,7 @@ export default function Page() {
 			<div className="flex bg-white rounded-lg p-5 mt-10">
 				{isFetching ? (
 					<div className="w-full flex justify-center items-center text-lg font-semibold">
-						Loading agents...
+						Loading stores...
 					</div>
 				) : (
 					<table className="w-full border-collapse">
@@ -121,6 +141,9 @@ export default function Page() {
 								<th className="px-4 py-2">Shop Number</th>
 								<th className="px-4 py-2">Store Category Name</th>
 								<th className="px-4 py-2">Store Category ID</th>
+								<th className="px-4 py-2">Store Email</th>
+								<th className="px-4 py-2">Store Password</th>
+								<th className="px-4 py-2">Status</th>
 							</tr>
 						</thead>
 						{stores.map((store) => (
@@ -132,6 +155,30 @@ export default function Page() {
 									<td className="px-4 py-2">{store.category}</td>
 									<td className="px-4 py-2">{store.storeNumber}</td>
 									<td className="px-4 py-2">{store.storeId}</td>
+									<td className="px-4 py-2">{store.email}</td>
+									<td className="px-4 py-2">{store.password}</td>
+									<td>
+										<div
+											className={`px-4 mt-1 py-2 font-semibold 
+                        ${
+													store.status === "Active"
+														? "bg-green-500 text-white rounded-lg"
+														: ""
+												} 
+                        ${
+													store.status === "Inactive"
+														? "bg-yellow-500 text-white rounded-lg"
+														: ""
+												} 
+                        ${
+													store.status === "Suspended"
+														? "bg-red-600 text-white rounded-lg"
+														: ""
+												}`}
+										>
+											{store.status}
+										</div>
+									</td>
 								</tr>
 							</tbody>
 						))}
@@ -201,6 +248,16 @@ export default function Page() {
 											required
 											className=" border-2 border-stroke outline-indigo-700 text-gray-900 rounded-lg w-full p-2.5 "
 										/>
+										<select
+											className="w-full border border-gray-300 rounded-md p-3 outline-indigo-700"
+											onChange={(e) => setStatus(e.target.value)}
+											value={status}
+										>
+											<option>Status</option>
+											<option value="Active">Active</option>
+											<option value="Inactive">Inactive</option>
+											<option value="Suspended">Suspended</option>
+										</select>
 									</div>
 
 									<button

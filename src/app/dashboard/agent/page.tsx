@@ -216,12 +216,12 @@ export default function Page() {
 												} 
                         ${
 													agent.status === "Inactive"
-														? "bg-yellow-500 text-white"
+														? "bg-yellow-500 text-white rounded-lg"
 														: ""
 												} 
                         ${
 													agent.status === "Suspended"
-														? "bg-red-600 text-white"
+														? "bg-red-600 text-white rounded-lg"
 														: ""
 												}`}
 										>

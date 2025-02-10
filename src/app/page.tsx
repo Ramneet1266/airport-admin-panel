@@ -17,7 +17,6 @@ export default function Page() {
 		try {
 			const res = await loginService(email, password)
 			if (res) {
-				localStorage.setItem("userEmail", email)
 				toast.success("Login successfull")
 				router.push("/dashboard")
 			}
