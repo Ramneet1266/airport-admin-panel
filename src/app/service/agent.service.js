@@ -1,26 +1,17 @@
 "use server"
-import {
-	addDoc,
-	collection,
-	getDocs,
-	query,
-	where,
-} from "firebase/firestore"
+
+import { addDoc, collection, getDocs, query, where } from "firebase/firestore"
 import { db } from "../lib/firebase"
 
-export async function isUnique(email, agentId) {
+// Function to check if the email is unique
+export async function isUnique(email) {
 	const agentRef = collection(db, "agents")
 
 	// Query Firestore for existing email
 	const emailQuery = query(agentRef, where("email", "==", email))
 	const emailSnapshot = await getDocs(emailQuery)
 
-	// Query Firestore for existing agent ID
-	const idQuery = query(agentRef, where("agentId", "==", agentId))
-	const idSnapshot = await getDocs(idQuery)
-
-	// True if both are unique
-	return emailSnapshot.empty && idSnapshot.empty
+	return emailSnapshot.empty // True if email is unique
 }
 
 // Function to generate a unique email if one already exists
@@ -45,57 +36,41 @@ async function generateUniqueEmail(baseEmail) {
 	return email
 }
 
-// Function to generate a unique password
-async function generateUniquePassword() {
-	let password
-	let isUnique = false
-
-	while (!isUnique) {
-		password = Math.random().toString(36).slice(-10) // Generate random password
-
-		// Check if password already exists in Firestore
-		const passwordQuery = query(
-			collection(db, "agents"),
-			where("password", "==", password)
-		)
-		const passwordSnapshot = await getDocs(passwordQuery)
-
-		if (passwordSnapshot.empty) isUnique = true // Ensure password is unique
-	}
-
-	return password
+// Function to generate a random password
+function generateUniquePassword() {
+	return Math.random().toString(36).slice(-10) // Generate random password
 }
 
+// Function to add an agent to Firestore
 export async function addAgent(agentData) {
-	// Generate a unique email
-	const uniqueEmail = await generateUniqueEmail(agentData.email)
-
-	// Generate a unique password
-	const uniquePassword = await generateUniquePassword()
-
-	// Update agent data with unique email & password
-	agentData.email = uniqueEmail
-	agentData.password = uniquePassword
-
-	if (!(await isUnique(agentData.email, agentData.agentId))) {
-		throw new Error("Agent ID already exists!")
-	}
+	// Generate unique email & password
+	const email = await generateUniqueEmail(
+		`${agentData.agentName.toLowerCase().replace(/\s+/g, "")}@store.com`
+	)
+	const password = generateUniquePassword()
 
 	try {
-		await addDoc(collection(db, "agents"), agentData)
-		return { success: true }
+		const docRef = await addDoc(collection(db, "agents"), {
+			agentName: agentData.agentName,
+			mobileNumber: agentData.mobileNumber,
+			image: agentData.image || "",
+			email,
+			password,
+		})
+
+		return { success: true, agentId: docRef.id, email, password }
 	} catch (error) {
-		console.log("Error adding agent:", error)
+		console.error("Error adding agent:", error)
 		throw new Error("Failed to add agent.")
 	}
 }
 
+// Function to fetch all agents from Firestore
 export async function getAgents() {
 	const agentRef = collection(db, "agents")
 	const snapshot = await getDocs(agentRef)
-	const agents = snapshot.docs.map((doc) => ({
-		id: doc.id,
+	return snapshot.docs.map((doc) => ({
+		agentId: doc.id, // Use Firestore Doc ID as Agent ID
 		...doc.data(),
 	}))
-	return agents
 }
