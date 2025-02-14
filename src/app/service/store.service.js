@@ -5,33 +5,28 @@ import { db } from "../lib/firebase"
 import { createUserWithEmailAndPassword } from "firebase/auth"
 import auth from "./login.service"
 
-export async function addStore(agentData) {
-	try {
-		await addDoc(collection(db, "stores"), agentData)
-		return { success: true }
-	} catch (error) {
-		console.log("Error adding agent:", error)
-		throw new Error("Failed to add agent.")
-	}
-}
-export async function getStores() {
-	const storeRef = collection(db, "stores")
-	const snapshot = await getDocs(storeRef)
-	const stores = snapshot.docs.map((doc) => ({
-		id: doc.id,
-		...doc.data(),
-	}))
-	return stores
-}
-export async function fetchCategoryAndStoreNumber() {
-	const storeRef = collection(db, "stores")
-	const snapshot = await getDocs(storeRef)
-	const storesList = snapshot.docs.map((doc) => ({
-		storeNumber: doc.data().storeNumber,
-		category: doc.data().category,
-	}))
-	return storesList
-}
+
+export const addStore = async (storeData) => {
+    try {
+        const storeRef = await addDoc(collection(db, "stores"), storeData);
+        console.log("Store added with ID: ", storeRef.id);
+        return storeRef.id;
+    } catch (error) {
+        console.error("Error adding store: ", error);
+    }
+};
+
+export const fetchStores = async () => {
+    try {
+        const storesSnap = await getDocs(collection(db, "stores"));
+        const stores = storesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return stores;
+    } catch (error) {
+        console.error("Error fetching stores: ", error);
+    }
+};
+
+
 export async function importUsersFromFirestore() {
 	const storeRef = collection(db, "stores") // Use 'collection' instead of 'db.collection'
 	const snapshot = await getDocs(storeRef)

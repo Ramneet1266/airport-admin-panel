@@ -4,7 +4,7 @@ import { X } from "lucide-react"
 import { toast } from "react-toastify"
 import {
 	addStore,
-	getStores,
+	fetchStores,
 	importUsersFromFirestore,
 } from "../../service/store.service" // Adjust as per the correct path
 
@@ -31,10 +31,10 @@ export default function Page() {
 	const [stores, setStores] = useState<Store[]>([])
 	const [isFetching, setIsFetching] = useState(true)
 
-	const fetchAgents = async () => {
+	const getStores = async () => {
 		setIsFetching(true)
 		try {
-			const data = await getStores()
+			const data = await fetchStores()
 			setStores(data as [])
 			console.log(data)
 		} catch (error) {
@@ -45,7 +45,7 @@ export default function Page() {
 	}
 
 	useEffect(() => {
-		fetchAgents()
+		getStores()
 		importUsersFromFirestore()
 	}, [])
 
@@ -85,7 +85,7 @@ export default function Page() {
 				toast.success("Store added Successfully")
 				setIsOpen(false)
 				clearFormFields() // Clear the form fields on success
-				await fetchAgents()
+				await getStores()
 				await importUsersFromFirestore()
 			}
 		} catch (error) {
@@ -139,9 +139,9 @@ export default function Page() {
 							<tr className="bg-gray-100">
 								<th className="px-4 py-2">Address Line 1</th>
 								<th className="px-4 py-2">Address Line 2</th>
-								<th className="px-4 py-2">Shop Number</th>
 								<th className="px-4 py-2">Store Category Name</th>
-								<th className="px-4 py-2">Store Category ID</th>
+								<th className="px-4 py-2">Shop Number</th>
+								<th className="px-4 py-2">Store Id</th>
 								<th className="px-4 py-2">Store Email</th>
 								<th className="px-4 py-2">Store Password</th>
 								<th className="px-4 py-2">Status</th>

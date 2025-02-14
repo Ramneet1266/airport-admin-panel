@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { X } from "lucide-react";
-import { addCategory, getCategories } from "../../service/Category";
+import { addCategoryToStore, fetchCategoriesForStore } from "../../service/category";
 
 export default function Page() {
   interface Category {
@@ -14,36 +14,60 @@ export default function Page() {
   const [catalogueCategoryName, setCatalogueCategoryName] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [storeId, setStoreId] = useState<string | null>(null);
+
+  // Simulated way to get the storeId after login (should be retrieved from auth or context)
+  useEffect(() => {
+    const storedStoreId = localStorage.getItem("storeId");
+    if (storedStoreId) {
+      setStoreId(storedStoreId);
+    }
+  }, []);
 
   useEffect(() => {
     async function fetchCategories() {
+      const storeId = localStorage.getItem("storeId"); // Retrieve storeId from localStorage
+      if (!storeId) return;
+    
       try {
-        const fetchedCategories = await getCategories();
-        setCategories(fetchedCategories);
+        const fetchedCategories = await fetchCategoriesForStore(storeId) || []; // Ensure it's always an array
+    
+        // Store category IDs in localStorage
+        if (fetchedCategories.length > 0) {
+          const categoryIds = fetchedCategories.map(cat => cat.id);
+          localStorage.setItem("categoryIds", JSON.stringify(categoryIds)); // Store array of category IDs
+        }
+    
+        setCategories(
+          fetchedCategories.map(cat => ({
+            catalogueCategoryId: cat.id,
+            catalogueCategoryName: (cat as any).catalogueCategoryName || "Unnamed Category",
+          }))
+        );
       } catch (error) {
         toast.error("Failed to fetch categories.");
       }
     }
+    
     fetchCategories();
-  }, []);
+  }, [storeId]);
 
   const handleAddCategory = async () => {
     if (!catalogueCategoryName.trim()) {
       toast.error("Catalogue Category Name cannot be empty!");
       return;
     }
+    if (!storeId) {
+      toast.error("Error: Store ID not found. Please log in again.");
+      return;
+    }
 
     try {
-      const newCategory = {
-        catalogueCategoryName,
-      };
-      const response = await addCategory(newCategory);
+      const newCategory = { catalogueCategoryName };
+      const categoryId = await addCategoryToStore(storeId, newCategory);
 
-      if (response.success) {
-        setCategories([
-          ...categories,
-          { catalogueCategoryId: `CAT-${Date.now()}`, catalogueCategoryName },
-        ]);
+      if (categoryId) {
+        setCategories([...categories, { catalogueCategoryId: categoryId, catalogueCategoryName }]);
         setCatalogueCategoryName("");
         setIsCategoryOpen(false);
         toast.success("Category Added Successfully");
@@ -65,7 +89,6 @@ export default function Page() {
         </button>
       </div>
 
-      {/* Category List */}
       <div className="bg-white rounded-lg p-5 mt-10">
         <h3 className="text-3xl font-semibold mb-4">Catalogue Categories</h3>
         <table className="w-full border-collapse">
@@ -94,7 +117,6 @@ export default function Page() {
         </table>
       </div>
 
-      {/* Modal for Adding Category */}
       {isCategoryOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 w-96">
@@ -106,14 +128,10 @@ export default function Page() {
               type="text"
               value={catalogueCategoryName}
               onChange={(e) => setCatalogueCategoryName(e.target.value)}
-              placeholder="Catalogue Category Name"
               className="border-2 w-full p-2 rounded-lg"
-              required
+              placeholder="Catalogue Category Name"
             />
-            <button
-              onClick={handleAddCategory}
-              className="w-full bg-indigo-700 text-white py-2 rounded-lg mt-4 hover:opacity-75"
-            >
+            <button onClick={handleAddCategory} className="w-full bg-indigo-700 text-white py-2 rounded-lg mt-4">
               Add Category
             </button>
           </div>

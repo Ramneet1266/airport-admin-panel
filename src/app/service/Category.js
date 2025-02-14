@@ -1,32 +1,28 @@
 "use server";
 
-import { addDoc, collection, getDocs } from "firebase/firestore";
+import { addDoc, collection, doc, getDocs } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
 const categoryCollection = collection(db, "categories");
 
-export async function addCategory(categoryData) {
+export const addCategoryToStore = async (storeId, categoryData) => {
   try {
-    const docRef = await addDoc(categoryCollection, {
-      catalogueCategoryName: categoryData.catalogueCategoryName,
-      catalogueCategoryId: `CAT-${Date.now()}`,
-    });
-    return { success: true, id: docRef.id };
+    const categoriesRef = collection(db, "stores", storeId, "categories");
+      const categoryRef = await addDoc(categoriesRef, categoryData);
+      console.log("Category added with ID: ", categoryRef.id);
+      return categoryRef.id;
   } catch (error) {
-    console.error("Error adding category:", error);
-    throw new Error("Failed to add category.");
+      console.error("Error adding category: ", error);
   }
-}
+};
 
-export async function getCategories() {
+
+export const fetchCategoriesForStore = async (storeId) => {
   try {
-    const snapshot = await getDocs(categoryCollection);
-    return snapshot.docs.map((doc) => ({
-      catalogueCategoryId: doc.data().catalogueCategoryId,
-      catalogueCategoryName: doc.data().catalogueCategoryName,
-    }));
+      const categoriesSnap = await getDocs(collection(db, "stores", storeId, "categories"));
+      const categories = categoriesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      return categories;
   } catch (error) {
-    console.error("Error fetching categories:", error);
-    throw new Error("Failed to fetch categories.");
+      console.error("Error fetching categories: ", error);
   }
-}
+};

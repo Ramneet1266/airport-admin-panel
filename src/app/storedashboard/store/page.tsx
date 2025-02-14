@@ -4,7 +4,7 @@ import { X } from "lucide-react"
 import { toast } from "react-toastify"
 import {
 	addStore,
-	getStores,
+	fetchStores,
 	importUsersFromFirestore,
 } from "../../service/store.service" // Adjust as per the correct path
 
@@ -34,7 +34,7 @@ export default function Page() {
 	const fetchAgents = async () => {
 		setIsFetching(true)
 		try {
-			const data = await getStores()
+			const data = await fetchStores()
 			setStores(data as [])
 			console.log(data)
 		} catch (error) {
