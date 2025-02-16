@@ -1,0 +1,3 @@
+[submodule "airport-admin-panel"]
+	path = airport-admin-panel
+	url = https://github.com/Ramneet1266/airport-admin-panel
